@@ -68,9 +68,11 @@ router.post('/', wrap(async (req, res) => {
     }
   }
   if (!(await freeSlots(branch, date)).includes(time)) return res.status(409).json({ message: 'That time is no longer available. Please pick another.' });
+  const id = new Appointment()._id;
+  const token = makeToken(id);
   let appt;
   try {
-    appt = await Appointment.create({ name, phone, email, branch, service, date, time, notes, startsAt: startsAt(date, time) });
+    appt = await Appointment.create({ _id: id, name, phone, email, branch, service, date, time, notes, startsAt: startsAt(date, time) });
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({ message: 'That time was just booked. Please choose another time.' });
@@ -78,7 +80,7 @@ router.post('/', wrap(async (req, res) => {
     throw error;
   }
   notify(appt, 'received'); // fire-and-forget
-  res.status(201).json({ message: 'Appointment requested', id: appt._id, token: makeToken(appt._id) });
+  res.status(201).json({ message: 'Appointment requested', id: appt._id, token });
 }));
 
 router.get('/counts', admin, wrap(async (_req, res) => {
